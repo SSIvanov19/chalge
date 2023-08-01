@@ -22,7 +22,6 @@ model Song {
     name            String
     artists         String[]
     yearOfPublish   Int
-    thumbnailURL    String
     album           String 
     location        String[]
 }
