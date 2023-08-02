@@ -1,14 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
-type CorrectProperties = {
-  name: boolean;
-  artists: boolean;
-  yearOfPublish: boolean;
-  album: boolean;
-  location: boolean;
-};
-
 export const songRouter = createTRPCRouter({
   getSongFieldsForDay: publicProcedure
     .input(z.date())
@@ -39,7 +31,7 @@ export const songRouter = createTRPCRouter({
           (input.getFullYear() * input.getDate() * (input.getMonth() + 1)) %
             songs.length
         ];
-
+      console.log(song);
       // return number of properties in song
       return {
         location: song?.location.length,
@@ -94,6 +86,7 @@ export const songRouter = createTRPCRouter({
   checkForCorrectInput: publicProcedure
     .input(
       z.object({
+        date: z.date(),
         name: z.string(),
         artists: z.array(z.string()),
         yearOfPublish: z.number(),
@@ -104,17 +97,47 @@ export const songRouter = createTRPCRouter({
     .output(
       z.object({
         success: z.boolean(),
-        message: z.optional(z.object({
-          name: z.boolean(),
-          artists: z.boolean(),
-          yearOfPublish: z.boolean(),
-          album: z.boolean(),
-          location: z.boolean(),
-        })),
+        message: z.optional(
+          z.object({
+            name: z.string(),
+            artists: z.array(z.string()),
+            yearOfPublish: z.number(),
+            album: z.optional(z.string()),
+            location: z.array(z.string()),
+            videoId: z.optional(z.string()),
+          })
+        ),
       })
     )
     .mutation(async ({ input, ctx }) => {
+      // check if date is after 01.08.2023
+      const dateAfter = new Date("2023-08-01");
+
+      if (input.date < dateAfter) {
+        return {
+          error: "Date is before 01.08.2023",
+        };
+      }
+
+      const currentServerDate = new Date(new Date().toDateString());
+      currentServerDate.setDate(currentServerDate.getDate() + 1);
+
+      if (input.date > currentServerDate) {
+        return {
+          error: "Date is in the future",
+        };
+      }
+
+      // chose random song based on today date
       const songs = await ctx.prisma.song.findMany();
+
+      const song =
+        songs[
+          (input.date.getFullYear() *
+            input.date.getDate() *
+            (input.date.getMonth() + 1)) %
+            songs.length
+        ];
 
       // make the input and the song properties lowercase and make sure to handle the case where the input is an array and the element might be shuffled
       const inputName = input.name.toLowerCase();
@@ -122,13 +145,13 @@ export const songRouter = createTRPCRouter({
         .map((artist) => artist.toLowerCase())
         .sort();
       const inputYearOfPublish = input.yearOfPublish;
-      const inputAlbum = input.album?.toLowerCase();
-      const inputLocation = input.location
+      let inputAlbum = input.album?.toLowerCase();
+      let inputLocation = input.location
         .map((location) => location.toLowerCase())
         .sort();
 
       // need to return the properties of the song that are correct, event if not all are corrent and if all properties are correct, then return videoId
-      const correctSong = songs.find((song) => {
+      const correctSong = (() => {
         const songName = song.name.toLowerCase();
         const songArtists = song.artists
           .map((artist) => artist.toLowerCase())
@@ -139,73 +162,71 @@ export const songRouter = createTRPCRouter({
           .map((location) => location.toLowerCase())
           .sort();
 
-        if (
-          songName === inputName &&
-          songArtists === inputArtists &&
-          songYearOfPublish === inputYearOfPublish &&
-          songAlbum === inputAlbum &&
-          songLocation === inputLocation
-        ) {
-          return true;
+        if (song.album === "") {
+          inputAlbum = "";
         }
 
-        return false;
-      });
+        if (song.location.length === 0) {
+          inputLocation = [];
+        }
+
+        if (
+          songName === inputName &&
+          songArtists.toString() === inputArtists.toString() &&
+          songYearOfPublish === inputYearOfPublish &&
+          songAlbum === inputAlbum &&
+          songLocation.toString() === inputLocation.toString()
+        ) {
+          return song;
+        }
+
+        return null;
+      })();
 
       if (correctSong) {
         return {
           success: true,
+          message: {
+            name: input.name,
+            artists: input.artists,
+            yearOfPublish: input.yearOfPublish,
+            album: input.album,
+            location: input.location,
+            videoId: correctSong.videoId,
+          },
         };
       }
-
-      // if no song is correct, return the properties that are correct
-      const correctProperties = {
-        name: false,
-        artists: false,
-        yearOfPublish: false,
-        album: false,
-        location: false,
+console.log
+      // if no song is correct, return a new object with the properties that are correct. If the property is an array, return only the element that are correct
+      const correctSongProperties = {
+        name: inputName === song.name.toLowerCase() ? input.name : "",
+        artists:
+          inputArtists ===
+          song.artists.map((artist) => artist.toLowerCase()).sort()
+            ? input.artists
+            : input.artists.filter((artist) =>
+                song.artists
+                  .map((artist) => artist.toLowerCase())
+                  .includes(artist.toLowerCase())
+              ),
+        yearOfPublish:
+          inputYearOfPublish === song.yearOfPublish ? input.yearOfPublish : 0,
+        album: inputAlbum === song.album?.toLowerCase() ? input.album : "",
+        location:
+          inputLocation ===
+          song.location.map((location) => location.toLowerCase()).sort()
+            ? input.location
+            : input.location.filter((location) =>
+                song.location
+                  .map((location) => location.toLowerCase())
+                  .includes(location.toLowerCase())
+              ),
+        videoId: "",
       };
-
-      songs.forEach((song) => {
-        const songName = song.name.toLowerCase();
-        const songArtists = song.artists
-          .map((artist) => artist.toLowerCase())
-          .sort();
-        const songYearOfPublish = song.yearOfPublish;
-        const songAlbum = song.album?.toLowerCase();
-        const songLocation = song.location
-          .map((location) => location.toLowerCase())
-          .sort();
-
-        if (songName === inputName) {
-          correctProperties.name = true;
-        }
-
-        // return true even if not all elements are correct
-        if (songArtists.every((artist) => inputArtists.includes(artist))) {
-          correctProperties.artists = true;
-        }
-
-        if (songYearOfPublish === inputYearOfPublish) {
-          correctProperties.yearOfPublish = true;
-        }
-
-        if (songAlbum === inputAlbum) {
-          correctProperties.album = true;
-        }
-
-        // return true even if not all elements are correct
-        if (
-          songLocation.every((location) => inputLocation.includes(location))
-        ) {
-          correctProperties.location = true;
-        }
-      });
 
       return {
         success: false,
-        message: correctProperties,
+        message: correctSongProperties,
       };
     }),
 });

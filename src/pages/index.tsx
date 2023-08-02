@@ -24,68 +24,108 @@ export default function Home() {
   date.setSeconds(0, 0);
   const song = api.songs.getSongFieldsForDay.useQuery(date);
 
-  const [valueForDate, setValueForDate] = useLocalStorage<Song>(
-    `valueFor${date.toDateString()}`,
-    {
-      name: "",
-      artists: [],
-      yearOfPublish: 0,
-      album: "",
-      location: [],
-      videoId: "",
-    } as Song
-  );
+  const [valueForDate, setValueForDate] = useState<Song>({
+    name: "",
+    artists: [],
+    yearOfPublish: 0,
+    album: "",
+    location: [],
+    videoId: "",
+  } as Song);
 
-  const checkForCorrentInput = () => {
-    
-    mutation.mutate({
-      name: valueForDate.name != "" ? valueForDate.name : inputValue,
-      artists: [...valueForDate.artists, inputValue],
-      yearOfPublish: valueForDate.yearOfPublish != 0 ? valueForDate.yearOfPublish : (parseInt(inputValue) || 0),
-      album: valueForDate.album != "" ? valueForDate.album : inputValue,
-      location: [...valueForDate.location, inputValue],
-    });
+  useEffect(() => {
+    setValueForDate(valueForDate);
+  }, [setValueForDate, valueForDate]);
 
-    if (mutation.data) {
-      if (mutation.data.success) {
-        console.log("Correct input");
-        return;
-      }
+  const checkForCorrentInput = async () => {
+    let artists = [...valueForDate.artists, inputValue];
 
-      if (mutation.data.message?.name) {
-        setValueForDate((prev) => ({ ...prev, name: inputValue }));
-      }
-      if (mutation.data.message?.artists) {
-        console.log("artists");
-        setValueForDate((prev) => ({
-          ...prev,
-          artist: [inputValue, ...prev.artists],
-        }));
-      }
-      if (mutation.data.message?.yearOfPublish) {
-        setValueForDate((prev) => ({
-          ...prev,
-          yearOfPublish: parseInt(inputValue),
-        }));
-      }
-      if (mutation.data.message?.album) {
-        setValueForDate((prev) => ({ ...prev, album: inputValue }));
-      }
-      if (mutation.data.message?.location) {
-        setValueForDate((prev) => ({
-          ...prev,
-          location: [inputValue, ...prev.location],
-        }));
-      }
+    if (valueForDate.artists.length == song.data?.artist) {
+      artists = valueForDate.artists;
     }
-  }
+
+    let location = [...valueForDate.location, inputValue];
+
+    if (valueForDate.location.length == song.data?.location) {
+      location = valueForDate.location;
+    }
+
+    let album = valueForDate.album == "" ? inputValue : valueForDate.album;
+
+    if (song.data?.album == 0) {
+      album = "";
+    }
+
+    await mutation.mutateAsync(
+      {
+        date: date,
+        name: valueForDate.name != "" ? valueForDate.name : inputValue,
+        artists: artists,
+        yearOfPublish:
+          valueForDate.yearOfPublish != 0
+            ? valueForDate.yearOfPublish
+            : parseInt(inputValue) || 0,
+        album: album,
+        location: location,
+      },
+      {
+        onSuccess: (data) => {
+          const response = data.message as Song;
+
+          // compate response with valueForDate if they are the same then consolo.log("You win")
+          if (
+            response.name == valueForDate.name &&
+            response.artists.length == valueForDate.artists.length &&
+            response.yearOfPublish == valueForDate.yearOfPublish &&
+            response.album == valueForDate.album &&
+            response.location.length == valueForDate.location.length
+          ) {
+            document.getElementById("inputBox")?.classList.add("animate-shake");
+            setTimeout(() => {
+              document
+                .getElementById("inputBox")
+                ?.classList.remove("animate-shake");
+            }, 1000);
+          }
+
+          setValueForDate(response);
+        },
+      }
+    );
+  };
 
   useEffect(() => {
     if (localStorage.getItem("isFirstTimeVisit") === null) {
       setIsInfoModalOpen(true);
       localStorage.setItem("isFirstTimeVisit", "false");
     }
+
+    const valueForDateFromLocalStorage = localStorage.getItem(
+      `valueForDate${date.toDateString()}`
+    );
+
+    if (valueForDateFromLocalStorage) {
+      setValueForDate(JSON.parse(valueForDateFromLocalStorage) as Song);
+    }
   }, []);
+
+  useEffect(() => {
+    if (
+      valueForDate.name == "" &&
+      valueForDate.artists.length == 0 &&
+      valueForDate.yearOfPublish == 0 &&
+      valueForDate.album == "" &&
+      valueForDate.location.length == 0 &&
+      valueForDate.videoId == ""
+    ) {
+      return;
+    }
+
+    localStorage.setItem(
+      `valueForDate${date.toDateString()}`,
+      JSON.stringify(valueForDate)
+    );
+  }, [valueForDate]);
 
   return (
     <>
@@ -170,55 +210,78 @@ export default function Home() {
           {valueForDate.videoId == "" ? (
             <div className="h-52 w-96 rounded-2xl bg-[#D9D9D9]" />
           ) : (
-            <Link href={`https://www.youtube.com/watch?v=${valueForDate.videoId}`} target="_blank">
-              <div className={`h-52 w-[23rem] rounded-2xl bg-[url('https://i3.ytimg.com/vi/${valueForDate.videoId}/maxresdefault.jpg')] bg-contain cursor-pointer`} />
-            </Link>
+            <>
+              <h1 className="text-inter text-3xl text-main text-center">
+                Поздравления, ти позна чалга песента!
+              </h1>
+              <h2 className="text-inter text-2xl text-main text-center">
+                Ела пак утре, за да познаеш следващата!
+              </h2>
+              <Link
+                href={`https://www.youtube.com/watch?v=${valueForDate.videoId}`}
+                target="_blank"
+              >
+                <div
+                  style={{
+                    backgroundImage: `url(https://i3.ytimg.com/vi/${valueForDate.videoId}/maxresdefault.jpg)`,
+                  }}
+                  className={`h-52 w-[23rem] cursor-pointer rounded-2xl bg-contain`}
+                />
+              </Link>
+            </>
           )}
           <div className="flex flex-col items-center justify-center space-y-4 lg:flex-row lg:space-x-4 lg:space-y-0">
             <input
               type="text"
               id="inputBox"
-              className="w-[24rem] border-b-2 text-center font-inter text-2xl text-main placeholder:text-center focus:outline-none"
+              className="w-[24rem] border-b-2 text-center font-inter text-2xl text-main transition duration-150 ease-in-out placeholder:text-center focus:outline-none"
               placeholder="Опитай се да познаеш ..."
               value={inputValue}
               onChange={(e) => {
                 setInputValue(e.target.value);
               }}
-            />
-            {valueForDate.videoId == "" ? (
-              <button className="w-fit rounded-lg border-2 pl-2 pr-2 font-inter text-2xl text-main focus:outline-none" onClick={
-                () => {
+              disabled={valueForDate.videoId != ""}
+              onKeyDown={(e) => {
+                if (e.key == "Enter") {
                   checkForCorrentInput();
                 }
-              }>
+              }}
+            />
+            {valueForDate.videoId == "" ? (
+              <button
+                className="w-fit rounded-lg border-2 pl-2 pr-2 font-inter text-2xl text-main focus:outline-none"
+                onClick={() => {
+                  checkForCorrentInput();
+                }}
+              >
                 Провери
               </button>
             ) : null}
           </div>
           <hr />
           <div className="w-[24rem] font-inter text-2xl text-main lg:w-[33rem]">
-            <p className="cursor-default">Име: </p>
+            <p className="cursor-default">Име: {valueForDate.name}</p>
             <hr />
           </div>
           <div className="w-[24rem] font-inter text-2xl text-main lg:w-[33rem]">
             {song.data.artist == 1 ? (
               <p className="cursor-default">
-                Изпълнител: {valueForDate.artists.concat(", ").slice(0, -2)}
+                Изпълнител: {valueForDate.artists[0]}
               </p>
             ) : (
               <p className="cursor-default">
                 Изпълнители (valueForDate.artist.length/{song.data?.artist}):{" "}
-                {valueForDate.artists.concat(", ").slice(0, -2)}
+                {valueForDate.artists}
               </p>
             )}
             <hr />
           </div>
           <div className="w-[24rem] font-inter text-2xl text-main lg:w-[33rem]">
-            {song.data.yearOfPublish == 1 ? (
+            {valueForDate.yearOfPublish == 0 ? (
               <p className="cursor-default">Година на издаване: </p>
             ) : (
               <p className="cursor-default">
-                Години на издаване: {valueForDate.yearOfPublish}
+                Година на издаване: {valueForDate.yearOfPublish}
               </p>
             )}
             <hr />
@@ -243,7 +306,18 @@ export default function Home() {
       ) : (
         <p>Loading...</p>
       )}
-      {/* footer for information */}
+      <footer>
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <p className="text-inter mb-6 text-center text-2xl text-main">
+            Ако проекта ти харесва можеш да дадеш някой лев ей{" "}
+            <span className="underline">
+              <Link href={"https://github.com/sponsors/SSIvanov19"}>тука</Link>
+            </span>
+            . <br /> Всички пари отиват за подобряването и подържането на тези
+            малки проекчета (Както и за Дока, разбира се :)
+          </p>
+        </div>
+      </footer>
     </>
   );
 }
