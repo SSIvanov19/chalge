@@ -270,8 +270,8 @@ export default function Home() {
               </p>
             ) : (
               <p className="cursor-default">
-                Изпълнители (valueForDate.artist.length/{song.data?.artist}):{" "}
-                {valueForDate.artists}
+                Изпълнители ({valueForDate.artists.length}/{song.data?.artist}):{" "}
+                {valueForDate.artists.join(", ")}
               </p>
             )}
             <hr />
@@ -295,9 +295,9 @@ export default function Home() {
           {song.data.location != 0 ? (
             <div className="w-[24rem] font-inter text-2xl text-main lg:w-[33rem]">
               <p className="cursor-default">
-                Локация на заснемане (valueForDate.location.length/
+                Локация на заснемане ({valueForDate.location.length}/
                 {song.data.location}):
-                {valueForDate.location.concat(", ").slice(0, -2)}
+                {valueForDate.location.join(", ")}
               </p>
               <hr />
             </div>
