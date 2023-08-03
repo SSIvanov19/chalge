@@ -1,28 +1,54 @@
-# Create T3 App
+<div align = "center">
+  <h1>Chalge</h1>
+</div>
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+<div align = "center">
+  <img src = "https://img.shields.io/github/languages/count/ssivanov19/chalge?style=for-the-badge">
+  <img src = "https://img.shields.io/github/contributors/ssivanov19/chalge?style=for-the-badge">
+  <img src = "https://img.shields.io/github/repo-size/ssivanov19/chalge?style=for-the-badge">
+  <img src = "https://img.shields.io/github/last-commit/ssivanov19/chalge?style=for-the-badge">
+  <img src = "https://img.shields.io/github/languages/top/ssivanov19/chalge?style=for-the-badge">
+</div>
 
-## What's next? How do I make an app with this?
+## About 💻 <a name = "about"></a>
+Have you ever wanted to play wordle, but with chalga? Well now you [can](https://chalge.net/)!
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## 🔧 Technologies
+Build using the t3 stack, Chalge is using cutting edge technologies, inlcuding:
+  <p align="left"> 
+  <a href="https://nextjs.org/" alt="NextJS"/><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Nextjs-logo.svg/207px-Nextjs-logo.svg.png" height=52/></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Typescript_logo_2020.svg/1200px-Typescript_logo_2020.svg.png" alt="TypeScript" height=52/></a>
+  <a href="https://trpc.io/"><img src="https://user-images.githubusercontent.com/63718744/204143807-531b6ad5-b8af-45b1-af30-15cb6b9c52d4.png" alt="tRPC" height=52 /></a>
+    <a href="https://www.prisma.io/"><img src="https://user-images.githubusercontent.com/63718744/204143873-e6cb3163-af53-4e93-912b-eb61f85797c7.png" alt="Prisma" height=52 /></a>
+    <a href="https://tailwindcss.com/"><img src="https://user-images.githubusercontent.com/63718744/204143913-69933211-171c-48a8-ad6c-e686fe3b757e.png" alt="TailwindCSS" height=52 />
+  </p> 
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+## Installation ⚙ <a name = "installation"></a>
 
-## Learn More
+You can start with downloading our project form [GitHub](https://github.com/SSIvanov19/chalge/archive/refs/heads/master.zip) by pressing the **green clone button**
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+OR
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+Pasting this line of code in **your favourite Terminal**:
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+```
+git clone --recursive https://github.com/SSIvanov19/chalge.git
+```
 
-## How do I deploy this?
+## Deployment 💻
+First you need to make a **.env** in the in the **root** folder. You can see [**.env.example**](https://github.com/SSIvanov19/chalge/blob/main/.env.example) on what environment variable you need to set up!
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+Then you need to make the migration with the Database, this can be acived by pasting the following lines in **your favourite Terminal**, while you are in the **root** folder:
+```
+  npx prisma db-push
+```
+
+To start the development server, simply type:
+```
+  npm run dev
+```
+
+```
+Thank you for scrolling this far! Please consider giving the repo a star ⭐.
+```
