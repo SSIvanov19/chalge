@@ -31,7 +31,7 @@ export const songRouter = createTRPCRouter({
           (input.getFullYear() * input.getDate() * (input.getMonth() + 1)) %
             songs.length
         ];
-      console.log(song);
+
       // return number of properties in song
       return {
         location: song?.location.length,
@@ -196,7 +196,7 @@ export const songRouter = createTRPCRouter({
           },
         };
       }
-console.log
+
       // if no song is correct, return a new object with the properties that are correct. If the property is an array, return only the element that are correct
       const correctSongProperties = {
         name: inputName === song.name.toLowerCase() ? input.name : "",
@@ -228,5 +228,98 @@ console.log
         success: false,
         message: correctSongProperties,
       };
+    }),
+  addRecordToLeaderboard: publicProcedure
+    .input(
+      z.object({
+        userName: z.string(),
+        date: z.date(),
+        startDateTime: z.date(),
+        endDateTime: z.date(),
+      })
+    )
+    .output(
+      z.object({
+        success: z.boolean(),
+        message: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      if (input.userName === "") {
+        return {
+          success: false,
+          message: "Username is empty",
+        };
+      }
+
+      const currentServerDate = new Date(new Date().toDateString());
+      currentServerDate.setDate(currentServerDate.getDate() + 1);
+
+      if (input.date > currentServerDate) {
+        return {
+          success: false,
+          message: "Date is in the future",
+        };
+      }
+
+      currentServerDate.setDate(currentServerDate.getDate() - 2);
+
+      if (input.date < currentServerDate) {
+        return {
+          success: false,
+          message: "Date is too far in the past",
+        };
+      }
+
+      if (input.startDateTime >= input.endDateTime) {
+        return {
+          success: false,
+          message: "Start time is after end time",
+        };
+      }
+
+      await ctx.prisma.leaderboard.create({
+        data: {
+          username: input.userName,
+          date: input.date,
+          startTime: input.startDateTime,
+          endTime: input.endDateTime,
+        },
+      });
+
+      return {
+        success: true,
+        message: `Record save to leaderboard for ${
+          input.userName
+        } on ${input.date.toString()}`,
+      };
+    }),
+  getLeaderboard: publicProcedure
+    .input(z.date())
+    .output(
+      z.array(
+        z.object({
+          username: z.string(),
+          date: z.date(),
+          startTime: z.date(),
+          endTime: z.date(),
+        })
+      )
+    )
+    .query(async ({ input, ctx }) => {
+      const leaderboard = await ctx.prisma.leaderboard.findMany();
+
+      const leaderboardForDate = leaderboard
+        .filter((record) => record.date.toDateString() === input.toDateString());
+      
+        // sort so first record is the fastest (with smallest difference between start and end time)
+        leaderboardForDate.sort((a, b) => {
+          const aTime = a.endTime.getTime() - a.startTime.getTime();
+          const bTime = b.endTime.getTime() - b.startTime.getTime();
+
+          return aTime - bTime;
+        });
+
+      return leaderboardForDate;
     }),
 });

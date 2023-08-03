@@ -2,9 +2,9 @@ import Head from "next/head";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useEffect, useState } from "react";
 import Navbar from "~/components/navbar";
-import { useLocalStorage } from "~/services/localStorageService";
 import { api } from "~/utils/api";
 import Link from "next/link";
+
 
 type Song = {
   name: string;
@@ -15,14 +15,34 @@ type Song = {
   videoId: string;
 };
 
+type TimeRecord = {
+  startTime: Date | null;
+  endTime: Date | null;
+  isShared: boolean | null;
+};
+
+type Leaderboard = {
+  id: string;
+  date: Date;
+  username: string;
+  startTime: Date;
+  endTime: Date;
+};
+
 export default function Home() {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState(false);
+  const [isShareScoreModalOpen, setIsShareScoreModalOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const mutation = api.songs.checkForCorrectInput.useMutation();
+  const [leaderboard, setLeaderboard] = useState<Array<Leaderboard>>(Array<Leaderboard>());
+  const [username, setUsername] = useState("");
+  const inputMutation = api.songs.checkForCorrectInput.useMutation();
+  const leaderboardMutation = api.songs.addRecordToLeaderboard.useMutation();
 
   const date = new Date();
   date.setSeconds(0, 0);
   const song = api.songs.getSongFieldsForDay.useQuery(date);
+  const leaderboardData = api.songs.getLeaderboard.useQuery(date);
 
   const [valueForDate, setValueForDate] = useState<Song>({
     name: "",
@@ -33,9 +53,22 @@ export default function Home() {
     videoId: "",
   } as Song);
 
+  const [timeRecords, setTimeRecords] = useState<TimeRecord>({
+    startTime: null,
+    endTime: null,
+    isShared: null,
+  } as TimeRecord);
+
   useEffect(() => {
     setValueForDate(valueForDate);
   }, [setValueForDate, valueForDate]);
+
+  const timeSpanToString = (startDateTime: Date, endDateTime: Date) => {
+    const timeSpan =
+      new Date(endDateTime).getTime() - new Date(startDateTime).getTime();
+    const res = new Date(timeSpan);
+    return res.toISOString().substring(11).substring(0, 12);
+  };
 
   const checkForCorrentInput = async () => {
     let artists = [...valueForDate.artists, inputValue];
@@ -56,7 +89,7 @@ export default function Home() {
       album = "";
     }
 
-    await mutation.mutateAsync(
+    await inputMutation.mutateAsync(
       {
         date: date,
         name: valueForDate.name != "" ? valueForDate.name : inputValue,
@@ -89,6 +122,85 @@ export default function Home() {
           }
 
           setValueForDate(response);
+
+          if (response.videoId != "") {
+            const endDate = new Date();
+            const startTime = timeRecords.startTime;
+
+            console.log(startTime, endDate);
+            setTimeRecords({
+              startTime: new Date(timeRecords.startTime),
+              endTime: endDate,
+              isShared: false,
+            } as TimeRecord);
+
+            localStorage.setItem(
+              `timeRecords${date.toDateString()}`,
+              JSON.stringify({
+                startTime: new Date(timeRecords.startTime),
+                endTime: endDate,
+                isShared: false,
+              } as TimeRecord)
+            );
+          }
+        },
+      }
+    );
+  };
+
+  const addRecordToLeaderboard = () => {
+    if (username == "") {
+      document.getElementById("usernameInput")?.classList.add("animate-shake");
+      setTimeout(() => {
+        document
+          .getElementById("usernameInput")
+          ?.classList.remove("animate-shake");
+      }, 1000);
+    }
+
+    leaderboardMutation.mutate(
+      {
+        date: date,
+        userName: username,
+        startDateTime: new Date(timeRecords.startTime),
+        endDateTime: new Date(timeRecords.endTime),
+      },
+      {
+        onSuccess: (data) => {
+          const temp = [
+            ...leaderboard,
+            {
+              date: date,
+              username: username,
+              startTime: timeRecords.startTime,
+              endTime: timeRecords.endTime,
+            } as Leaderboard,
+          ];
+          temp.sort((a, b) => {
+            const aTime =
+              new Date(a.endTime).getTime() - new Date(a.startTime).getTime();
+            const bTime =
+              new Date(b.endTime).getTime() - new Date(b.startTime).getTime();
+
+            return aTime - bTime;
+          });
+          setLeaderboard(temp);
+          setIsShareScoreModalOpen(false);
+          setIsLeaderboardModalOpen(true);
+          setTimeRecords({
+            startTime: new Date(timeRecords.startTime),
+            endTime: new Date(timeRecords.endTime),
+            isShared: true,
+          } as TimeRecord);
+
+          localStorage.setItem(
+            `timeRecords${date.toDateString()}`,
+            JSON.stringify({
+              startTime: new Date(timeRecords.startTime),
+              endTime: new Date(timeRecords.endTime),
+              isShared: true,
+            } as TimeRecord)
+          );
         },
       }
     );
@@ -107,6 +219,32 @@ export default function Home() {
     if (valueForDateFromLocalStorage) {
       setValueForDate(JSON.parse(valueForDateFromLocalStorage) as Song);
     }
+
+    const timeRecordsFromLocalStorage = localStorage.getItem(
+      `timeRecords${date.toDateString()}`
+    );
+
+    if (timeRecordsFromLocalStorage) {
+      setTimeRecords(JSON.parse(timeRecordsFromLocalStorage) as TimeRecord);
+    } else {
+      const startDate = new Date();
+      setTimeRecords({
+        startTime: startDate,
+        endTime: null,
+        isShared: false,
+      } as TimeRecord);
+
+      localStorage.setItem(
+        `timeRecords${date.toDateString()}`,
+        JSON.stringify({
+          startTime: startDate,
+          endTime: null,
+          isShared: false,
+        } as TimeRecord)
+      );
+    }
+
+    setLeaderboard(leaderboardData.data as Array<Leaderboard>);
   }, []);
 
   useEffect(() => {
@@ -192,6 +330,183 @@ export default function Home() {
           </div>
         </Dialog>
       </Transition>
+
+      <Transition appear show={isShareScoreModalOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => {
+            setIsShareScoreModalOpen(false);
+          }}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Сподели твоето време
+                  </Dialog.Title>
+                  <div className="mt-2">
+                    <p className="pb-4 text-sm text-gray-500">
+                      Поздравления, твоето време е{" "}
+                      {timeSpanToString(
+                        timeRecords.startTime,
+                        timeRecords.endTime
+                      )}
+                    </p>
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => {
+                          setUsername(e.target.value);
+                        }}
+                        id="usernameInput"
+                        className="w-2/3 border-b-2 text-center font-inter text-2xl text-main transition duration-150 ease-in-out placeholder:text-center focus:outline-none"
+                        placeholder="Вашето име"
+                      />
+                      <button
+                        className="w-full rounded-lg border-2 pl-2 pr-2 font-inter text-2xl text-main focus:outline-none"
+                        onClick={() => {
+                          addRecordToLeaderboard();
+                        }}
+                      >
+                        Сподели
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      onClick={() => setIsShareScoreModalOpen(false)}
+                    >
+                      Не, благодаря!
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      <Transition appear show={isLeaderboardModalOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => {
+            setIsLeaderboardModalOpen(false);
+          }}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                    onClick={() => {
+                      window.open(
+                        "https://www.youtube.com/watch?v=75ENws5_Bjc"
+                      );
+                    }}
+                  >
+                    Топ
+                  </Dialog.Title>
+                  <div className="mt-2">
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      {leaderboard && leaderboard.length != 0 ? (
+                        <>
+                          {leaderboard.map((record, index) => {
+                            return (
+                              <div
+                                className="flex w-fit flex-row justify-between space-x-2"
+                                key={index}
+                              >
+                                <p className="text-sm text-gray-500">
+                                  {index + 1}. {record.username}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {timeSpanToString(
+                                    record.startTime,
+                                    record.endTime
+                                  )}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-gray-500">
+                            Няма записани рекорди
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      onClick={() => setIsLeaderboardModalOpen(false)}
+                    >
+                      Затвори
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
       <Head>
         <title>Chalge</title>
         <meta
@@ -201,6 +516,9 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Navbar
+        onClickLeaderboardIcon={() => {
+          setIsLeaderboardModalOpen(true);
+        }}
         onClickOverHelpIcon={() => {
           setIsInfoModalOpen(true);
         }}
@@ -211,11 +529,32 @@ export default function Home() {
             <div className="h-52 w-96 rounded-2xl bg-[#D9D9D9]" />
           ) : (
             <>
-              <h1 className="text-inter text-3xl text-main text-center">
+              <h1 className="text-inter text-center text-3xl text-main">
                 Поздравления, ти позна чалга песента!
               </h1>
-              <h2 className="text-inter text-2xl text-main text-center">
+              <h2 className="text-inter text-center text-2xl text-main">
                 Ела пак утре, за да познаеш следващата!
+              </h2>
+              <h2>
+                <div className="flex flex-col items-center justify-center space-x-0 space-y-2 lg:flex-row lg:space-x-2 lg:space-y-0">
+                  <span className="text-inter text-center text-2xl text-main">
+                    Успя да познаеш за:{" "}
+                    {timeSpanToString(
+                      timeRecords.startTime,
+                      timeRecords.endTime
+                    )}
+                  </span>
+                  {timeRecords.isShared == false ? (
+                    <button
+                      className="w-fit rounded-lg border-2 pl-2 pr-2 font-inter text-2xl text-main focus:outline-none"
+                      onClick={() => {
+                        setIsShareScoreModalOpen(true);
+                      }}
+                    >
+                      Сподели
+                    </button>
+                  ) : null}
+                </div>
               </h2>
               <Link
                 href={`https://www.youtube.com/watch?v=${valueForDate.videoId}`}

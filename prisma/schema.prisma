@@ -25,3 +25,11 @@ model Song {
     album           String 
     location        String[]
 }
+
+model Leaderboard {
+    id              String   @id @default(cuid())
+    date            DateTime @default(now())
+    username        String
+    startTime       DateTime
+    endTime         DateTime
+}

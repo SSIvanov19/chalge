@@ -1,22 +1,26 @@
 export default function Navbar({
   onClickOverHelpIcon,
+  onClickLeaderboardIcon,
 }: {
   onClickOverHelpIcon: () => void;
+  onClickLeaderboardIcon: () => void;
 }) {
   return (
-    <nav className="w-fill flex h-20 items-center justify-between lg:justify-around border-b-2">
-      <div className="lg:w-1/3 w-0 hidden lg:block"></div>
-      <div className="flex w-1/3 items-center justify-center lg:pl-0 pl-2">
-        <h1 className="font-inter lg:text-5xl text-4xl font-bold text-main">Chalge</h1>
+    <nav className="w-fill flex h-20 items-center justify-between border-b-2 lg:justify-around">
+      <div className="hidden w-0 lg:block lg:w-1/3"></div>
+      <div className="flex w-1/3 items-center justify-center pl-2 lg:pl-0">
+        <h1 className="font-inter text-4xl font-bold text-main lg:text-5xl">
+          Chalge
+        </h1>
       </div>
-      <div className="flex w-1/3 items-center justify-end space-x-6 lg:p-20 pr-6">
+      <div className="flex w-1/3 items-center justify-end space-x-6 pr-6 lg:p-20">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="54"
           height="54"
           viewBox="0 0 54 54"
           fill="none"
-          className="cursor-pointer lg:w-auto w-10"
+          className="w-10 cursor-pointer lg:w-auto"
           onClick={onClickOverHelpIcon}
         >
           <path
@@ -30,10 +34,11 @@ export default function Navbar({
           height="54"
           viewBox="0 0 54 54"
           fill="none"
-          className="cursor-pointer lg:w-auto w-10"
+          className="w-10 cursor-pointer lg:w-auto"
+          onClick={onClickLeaderboardIcon}
         >
           <path
-            d="M47.0565 29.2759C47.1707 28.4427 47.2278 27.5816 47.2278 26.665C47.2278 25.7762 47.1707 24.8873 47.0279 24.0541L52.825 19.6654C53.339 19.2766 53.4818 18.5266 53.1677 17.9711L47.6847 8.74945C47.342 8.13838 46.6281 7.94395 45.9999 8.13838L39.1747 10.8049C37.7468 9.74939 36.2333 8.86056 34.5484 8.19393L33.5204 1.13882C33.4062 0.472192 32.835 0 32.1496 0H21.1837C20.4983 0 19.9557 0.472192 19.8415 1.13882L18.8134 8.19393C17.1286 8.86056 15.5865 9.77717 14.1872 10.8049L7.36203 8.13838C6.73378 7.91617 6.01985 8.13838 5.67716 8.74945L0.222747 17.9711C-0.119939 18.5544 -0.00571076 19.2766 0.565432 19.6654L6.36253 24.0541C6.21975 24.8873 6.10552 25.8039 6.10552 26.665C6.10552 27.5261 6.16263 28.4427 6.30542 29.2759L0.508318 33.6646C-0.00571072 34.0534 -0.148496 34.8034 0.165632 35.3589L5.6486 44.5805C5.99129 45.1916 6.70522 45.3861 7.33348 45.1916L14.1586 42.5251C15.5865 43.5806 17.1 44.4694 18.7849 45.1361L19.813 52.1912C19.9557 52.8578 20.4983 53.33 21.1837 53.33H32.1496C32.835 53.33 33.4062 52.8578 33.4918 52.1912L34.5199 45.1361C36.2048 44.4694 37.7468 43.5806 39.1461 42.5251L45.9713 45.1916C46.5996 45.4138 47.3135 45.1916 47.6562 44.5805L53.1391 35.3589C53.4818 34.7478 53.339 34.0534 52.7965 33.6646L47.0565 29.2759ZM26.6667 36.6644C21.0124 36.6644 16.3861 32.1647 16.3861 26.665C16.3861 21.1653 21.0124 16.6656 26.6667 16.6656C32.321 16.6656 36.9472 21.1653 36.9472 26.665C36.9472 32.1647 32.321 36.6644 26.6667 36.6644Z"
+            d="M14.6658 53.33H0V17.7767H14.6658V53.33ZM33.9979 0H19.3321V53.33H33.9979V0ZM53.33 23.7022H38.6643V53.33H53.33V23.7022Z"
             fill="#474747"
           />
         </svg>
