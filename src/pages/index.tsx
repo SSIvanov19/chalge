@@ -5,7 +5,6 @@ import Navbar from "~/components/navbar";
 import { api } from "~/utils/api";
 import Link from "next/link";
 
-
 type Song = {
   name: string;
   artists: string[];
@@ -34,7 +33,10 @@ export default function Home() {
   const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState(false);
   const [isShareScoreModalOpen, setIsShareScoreModalOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [leaderboard, setLeaderboard] = useState<Array<Leaderboard>>(Array<Leaderboard>());
+  const [leaderboard, setLeaderboard] = useState<Array<Leaderboard>>(
+    Array<Leaderboard>()
+  );
+  const [isShareButtonPressed, setIsShareButtonPressed] = useState(false);
   const [username, setUsername] = useState("");
   const inputMutation = api.songs.checkForCorrectInput.useMutation();
   const leaderboardMutation = api.songs.addRecordToLeaderboard.useMutation();
@@ -149,6 +151,13 @@ export default function Home() {
   };
 
   const addRecordToLeaderboard = () => {
+    if (isShareButtonPressed) {
+      return;
+    }
+
+    setIsShareButtonPressed(true);
+
+    document.getElementById("shareButton")?.setAttribute("disabled", "true");
     if (username == "") {
       document.getElementById("usernameInput")?.classList.add("animate-shake");
       setTimeout(() => {
@@ -156,6 +165,10 @@ export default function Home() {
           .getElementById("usernameInput")
           ?.classList.remove("animate-shake");
       }, 1000);
+
+      document.getElementById("shareButton")?.removeAttribute("disabled");
+      setIsShareButtonPressed(false);
+      return;
     }
 
     leaderboardMutation.mutate(
@@ -201,9 +214,14 @@ export default function Home() {
               isShared: true,
             } as TimeRecord)
           );
+
+          document.getElementById("shareButton")?.removeAttribute("disabled");
+        
+          setIsShareButtonPressed(false);
         },
       }
     );
+
   };
 
   useEffect(() => {
@@ -389,6 +407,7 @@ export default function Home() {
                         placeholder="Вашето име"
                       />
                       <button
+                        id="shareButton"
                         className="w-full rounded-lg border-2 pl-2 pr-2 font-inter text-2xl text-main focus:outline-none"
                         onClick={() => {
                           addRecordToLeaderboard();
