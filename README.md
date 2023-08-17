@@ -17,7 +17,7 @@ Have you ever wanted to play wordle, but with chalga? Well now you [can](https:/
 
 These are our really cool sponsors!
 
-<!-- sponsors --><!-- sponsors -->
+<!-- sponsors --><a href="https://github.com/ISBachvarov21"><img src="https://github.com/ISBachvarov21.png" width="60px" alt="Ivaylo Bachvarov" /></a><!-- sponsors -->
 
 
 ## 🔧 Technologies
