@@ -15,3 +15,10 @@ jobs:
         with:
           token: ${{ secrets.PAT }}
           file: 'README.md'
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          force: true
