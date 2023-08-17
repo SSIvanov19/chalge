@@ -15,6 +15,7 @@ jobs:
         with:
           token: ${{ secrets.PAT }}
           file: 'README.md'
+          teamplate: '<a href="https://github.com/{{{ login }}}"><img src="https://images.weserv.nl/?url=https://github.com/{{{ login }}}.png?v=4&h=50&w=50&fit=cover&mask=circle&maxage=7d" width="50px" alt="{{{ login }}}" /></a>'
 
       - name: Push changes 🚀
         uses: JamesIves/github-pages-deploy-action@v4
