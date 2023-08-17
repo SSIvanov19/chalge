@@ -13,6 +13,12 @@
 ## About 💻 <a name = "about"></a>
 Have you ever wanted to play wordle, but with chalga? Well now you [can](https://chalge.net/)!
 
+## Sponsors
+
+These are our really cool sponsors!
+
+<!-- sponsors --><!-- sponsors -->
+
 
 ## 🔧 Technologies
 Build using the t3 stack, Chalge is using cutting edge technologies, inlcuding:
