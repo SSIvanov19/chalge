@@ -1,5 +1,9 @@
 name: Azure Static Web Apps CI/CD
 
+env:
+  DATABASE_URL: URL
+  SECRET_KEY: mySecretKey
+
 on:
   push:
     branches:
