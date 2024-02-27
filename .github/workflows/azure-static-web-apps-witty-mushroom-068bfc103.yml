@@ -1,8 +1,8 @@
 name: Azure Static Web Apps CI/CD
 
 env:
-  DATABASE_URL: URL
-  SECRET_KEY: mySecretKey
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
 on:
   push:
